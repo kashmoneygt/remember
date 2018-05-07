@@ -1,0 +1,9 @@
+NOTES
+
+REQUESTS
+400 = Bad Request
+404 = Resource does not exist
+
+MLAB user info for 'images' db
+user: kash
+pass: 1234
