@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "body-parser": "^1.18.2",
+    "clarifai": "^2.7.1",
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "gridfs-stream": "^1.1.1",

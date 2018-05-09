@@ -7,11 +7,16 @@ const methodOverride = require('method-override');
 const multer = require('multer');
 const GridFsStorage = require('multer-gridfs-storage');
 const Grid = require('gridfs-stream');
+// const keywords = require('./keywords.js');
+
+const Clarifai = require('clarifai');
+const clarifaiApp = new Clarifai.App({ apiKey: 'e9d45fac5bb4461aaa45a986e947b87b' });
 
 const app = express();
 
 // Middleware
 app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 app.set('view engine', 'ejs');
 
@@ -39,7 +44,7 @@ const storage = new GridFsStorage({
         const filename = buf.toString('hex') + path.extname(file.originalname);
         const fileInfo = {
           filename: filename,
-          bucketName: 'images'
+		  bucketName: 'images'
         };
         resolve(fileInfo);
       });
@@ -47,6 +52,9 @@ const storage = new GridFsStorage({
   }
 });
 const upload = multer({ storage });
+
+// Init dict for keywords
+keywords = {}
 
 // @route GET /
 // @desc Loads form
@@ -59,7 +67,7 @@ app.get('/', (req, res) => {
 				else file.isImage = false;
 			});
 
-			res.render('index', { files: files});
+			res.render('index', { files: files });
 		}
 	
 	});
@@ -104,6 +112,41 @@ app.get('/image/:filename', (req, res) => {
 		if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') {
 			// read output to browser
 			const readstream = gfs.createReadStream(file.filename);
+
+			//get keywords from readstream			
+			let conceptDict = {}; // key = concept (str), val = probability (decimal 0-1)
+
+			const buffers = [];
+			readstream.on('data', (chunk) => {
+				buffers.push(chunk);
+			});
+			readstream.on('end', () => {
+				const fileBuffer = Buffer.concat(buffers);
+				const imgBase64 = fileBuffer.toString('base64');
+
+				// clarifai keywords
+				clarifaiApp.models.predict(Clarifai.GENERAL_MODEL, {base64: imgBase64}).then(
+					function(response) {
+						let concepts = response.outputs[0].data.concepts;
+
+						for (var i = 0; i < concepts.length; i++) {
+							conceptDict[concepts[i].name] = concepts[i].value;
+						}
+						// console.log('conceptDict2', conceptDict);
+						// return conceptDict;
+
+					},
+					function(err) {
+						console.log(err);
+					}
+				);
+			});
+			
+			setTimeout(function(){
+				//do what you need here
+				console.log('conceptDict', conceptDict);
+			}, 12000);
+
 			readstream.pipe(res);
 		} else {
 			res.status(404).json({ err: 'File is not an image' });
