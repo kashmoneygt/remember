@@ -39,7 +39,7 @@ const storage = new GridFsStorage({
         const fileInfo = {
         	filename: filename,
 			bucketName: 'images',
-			metadata: 'keywords'
+			metadata: 'Analyzing image...'
 		};
         resolve(fileInfo);
       });
@@ -57,7 +57,7 @@ app.get('/', (req, res) => {
 			files.map(file => {
 				if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') {
 					file.isImage = true;
-					console.log('file metadata in get /:', file.metadata);
+					// console.log('file metadata in get /:', file.metadata);
 				}	else file.isImage = false;
 			});
 			res.render('index', { files: files });
@@ -105,23 +105,25 @@ app.get('/image/:filename', (req, res) => {
 		if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') {
 			// read output to browser
 			const readstream = gfs.createReadStream(file.filename);
-			
-			// set metadata to keywords from clarifai
-			let initializeKeywords = keywords.getKeywords(readstream);
-			
-			initializeKeywords.then(
-				function(result) {
-					file.metadata = result;
-					console.log(`${file.filename}'s has been updated to ${file.metadata}`);
-				},
-				function(err) { console.log(err); }
-			);
 
-			// socket.on('update-msg', function (msg) {
-			// 	console.log(msg);
-			// 	$('#mydiv').html(msg.data)
-			// });
-			
+			if (file.metadata === 'Analyzing image...') {
+				// set metadata to keywords from clarifai
+				let initializeKeywords = keywords.getKeywords(readstream);
+
+				initializeKeywords.then(
+					function(result) {
+						file.metadata = result;
+						// console.log(`${file.filename}'s has been updated to ${file.metadata}`);
+						gfs.files.update(
+							{_id: file._id},
+							{ $set: {metadata: file.metadata} }
+						);
+
+					},
+					function(err) { console.log(err); }
+				);
+			}
+
 			readstream.pipe(res);
 		} else {
 			res.status(404).json({ err: 'File is not an image' });
