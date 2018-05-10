@@ -33,7 +33,7 @@
 						<div class="card card-body mb-3">
 							<% if(file.isImage) { %>
 								<img src="image/<%= file.filename %>" alt="">
-								<p id="keywords"><%= file.metadata %></p>
+								<p align="center" id="keywords"><%= file.metadata %></p>
 								<!-- <% console.log('file metadata in html:', file.metadata); %> -->
 							<% } else { %>
 								<%= file.filename %>
