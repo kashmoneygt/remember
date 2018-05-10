@@ -1,7 +1,7 @@
 const Clarifai = require('clarifai');
 const clarifaiApp = new Clarifai.App({ apiKey: 'e9d45fac5bb4461aaa45a986e947b87b' });
 
-const getKeywords = function getKeywords(readstream) {
+module.exports.getKeywords = function getKeywords(readstream) {
 
 	return new Promise((resolve, reject) => {
 
@@ -23,9 +23,9 @@ const getKeywords = function getKeywords(readstream) {
 
 					for (var i = 0; i < concepts.length; i++) {
 						conceptDict[concepts[i].name] = concepts[i].value;
-						conceptStr += ` ${concepts[i].name}`;
+						conceptStr += `${concepts[i].name} `;
 					}
-					resolve(conceptStr);
+					resolve(conceptStr.trim());
 				},
 				function(err) {
 					reject(err);
@@ -36,5 +36,3 @@ const getKeywords = function getKeywords(readstream) {
 			
 	});
 }
-
-module.exports.getKeywords = getKeywords;

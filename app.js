@@ -1,4 +1,4 @@
-const app = require('express')();
+const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
@@ -8,6 +8,8 @@ const multer = require('multer');
 const GridFsStorage = require('multer-gridfs-storage');
 const Grid = require('gridfs-stream');
 const keywords = require('./keywords.js');
+
+const app = express();
 
 // Middleware
 app.use(bodyParser.json());
@@ -80,7 +82,6 @@ app.get('/files', (req, res) => {
 
 		// files exist
 		return res.json(files);
-
 	});
 });
 
