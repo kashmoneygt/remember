@@ -107,7 +107,7 @@ app.get('/image/:filename', (req, res) => {
 			// read output to browser
 			const readstream = gfs.createReadStream(file.filename);
 
-			if (file.metadata === 'Analyzing image...') {
+			if (file.metadata === 'Analyzing image...' || file.metadata === '') {
 				// set metadata to keywords from clarifai
 				let initializeKeywords = keywords.getKeywords(readstream);
 
