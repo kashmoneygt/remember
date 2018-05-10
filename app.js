@@ -1,4 +1,4 @@
-const express = require('express');
+const app = require('express')();
 const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
@@ -9,14 +9,8 @@ const GridFsStorage = require('multer-gridfs-storage');
 const Grid = require('gridfs-stream');
 const keywords = require('./keywords.js');
 
-const Clarifai = require('clarifai');
-const clarifaiApp = new Clarifai.App({ apiKey: 'e9d45fac5bb4461aaa45a986e947b87b' });
-
-const app = express();
-
 // Middleware
 app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 app.set('view engine', 'ejs');
 
@@ -47,9 +41,6 @@ const storage = new GridFsStorage({
 			bucketName: 'images',
 			metadata: 'keywords'
 		};
-		console.log('file', buf);
-		console.log('fileChanged', Buffer(buf).toString('base64'));
-		keywords.getKeywords(Buffer(buf).toString('base64'));
         resolve(fileInfo);
       });
     });
@@ -64,8 +55,10 @@ app.get('/', (req, res) => {
 		if (!files || files.length === 0) res.render('index', {files: false});
 		else {
 			files.map(file => {
-				if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') file.isImage = true;
-				else file.isImage = false;
+				if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') {
+					file.isImage = true;
+					console.log('file metadata in get /:', file.metadata);
+				}	else file.isImage = false;
 			});
 			res.render('index', { files: files });
 		}
@@ -76,8 +69,6 @@ app.get('/', (req, res) => {
 // @route POST /upload
 // @desc Uploads image to db
 app.post('/upload', upload.single('image'), (req, res) => {
-	// console.log('req', req.file);
-	// res.send({keywords: 'keywords has been changed'});
 	res.redirect('/');
 });
 
@@ -114,6 +105,23 @@ app.get('/image/:filename', (req, res) => {
 		if (file.contentType === 'image/png' || file.contentType === 'image/jpeg') {
 			// read output to browser
 			const readstream = gfs.createReadStream(file.filename);
+			
+			// set metadata to keywords from clarifai
+			let initializeKeywords = keywords.getKeywords(readstream);
+			
+			initializeKeywords.then(
+				function(result) {
+					file.metadata = result;
+					console.log(`${file.filename}'s has been updated to ${file.metadata}`);
+				},
+				function(err) { console.log(err); }
+			);
+
+			// socket.on('update-msg', function (msg) {
+			// 	console.log(msg);
+			// 	$('#mydiv').html(msg.data)
+			// });
+			
 			readstream.pipe(res);
 		} else {
 			res.status(404).json({ err: 'File is not an image' });
